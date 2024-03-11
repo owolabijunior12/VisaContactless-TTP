@@ -6,17 +6,22 @@ import android.nfc.NfcAdapter
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import com.lovisgod.nfcpos.utils.BerTag
 import com.lovisgod.testVisaTTP.Constants.lastReadTag
 import com.lovisgod.testVisaTTP.Constants.testCase
 import com.lovisgod.testVisaTTP.Constants.testCase_ONLINE_PIN
 import com.lovisgod.testVisaTTP.Constants.testCase_REFUND
 import com.lovisgod.testVisaTTP.Constants.testCase_SIGNATURE
+import com.lovisgod.testVisaTTP.handlers.Conversions
 import com.lovisgod.testVisaTTP.handlers.HexUtil
 import com.lovisgod.testVisaTTP.handlers.Implementations.NFCListenerImpl
 import com.lovisgod.testVisaTTP.handlers.PPSEManager
+import com.lovisgod.testVisaTTP.handlers.TlvData
+import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.visa.app.ttpkernel.ContactlessConfiguration
 import com.visa.app.ttpkernel.ContactlessKernel
 import com.visa.app.ttpkernel.NfcTransceiver
@@ -38,6 +43,8 @@ class MainActivity : AppCompatActivity(), TransactionLogger {
     var newNfcTransceiver: NewNfcTransceiver? = null
     var mainLog: TextView? = null
     var testBtn: AppCompatButton? = null
+    var view: View?  = null
+    var DF03 = ""
 
     // Supported AIDs
     val supportedAid = ArrayList(
@@ -52,6 +59,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger {
 
         mainLog = findViewById(R.id.mainLog)
         testBtn = findViewById(R.id.testBtn)
+        view = findViewById(R.id.keypad_layout)
 
         contactlessKernel = ContactlessKernel.getInstance(applicationContext);
 
@@ -114,14 +122,16 @@ class MainActivity : AppCompatActivity(), TransactionLogger {
 
         setupNfc()
 
+        doDummyPinKey() //this is dummy pinkey loading for the purpose testing pinkey injection
+
         // For testing purposes, perform 10 transactions
 
         testBtn?.setOnClickListener {
-            testCase = 1
-            while (testCase <= 10) {
+//            testCase = 1
+//            while (testCase <= 10) {
                 doTransaction()
-                testCase++
-            }
+//                testCase++
+//            }
         }
 
     }
@@ -300,6 +310,8 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
                 }
             }
 
+
+
             // Display the last APDU sent & the last SW received by the TTP Kernel
             if (contactlessResult.lastApdu != null && contactlessResult.lastSW != null) {
                 mainLog!!.text = """
@@ -324,6 +336,19 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
                 
                 
                 """.trimIndent()
+            }
+            val df03tlv = internalData["DF03"]?.let { Conversions.parseBERTLV(it) }
+
+            println(df03tlv?.find(BerTag("DF03"))?.getHexValue())
+
+            DF03 = df03tlv?.find(BerTag("DF03"))?.getHexValue().toString()
+
+            println("CVM kernel outcome ::: $DF03")
+
+            if (DF03.isNotEmpty() && (DF03 == "02")) {
+              view?.visibility = View.VISIBLE
+            } else {
+                println("this is the cvm result :::: $DF03")
             }
 
             // Check TTP Kernel transaction outcome
@@ -492,6 +517,7 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
             while (lastReadTag == null) {
                 Thread.sleep(1000)
             }
+//            lastReadTag?.connect()
             val apduRes = nfcListener.transceiveApdu(txData)
             resp = HexUtil.toHexString(apduRes)
             println("\nCARD: $resp\n")
@@ -529,5 +555,10 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
     override fun onDestroy() {
         super.onDestroy()
         nfcListener?.resetNFCField()
+    }
+
+    fun doDummyPinKey() {
+        val pinKey = "45C36DD03F229F5DC1C662E2291CA2BA"
+        SDKHelper.injectKey(pinKey, this.applicationContext, KeyType.PIN_KEY)
     }
 }
