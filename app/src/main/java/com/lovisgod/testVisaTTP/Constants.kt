@@ -10,4 +10,5 @@ object Constants {
     val testCase_SIGNATURE = 3
     val testCase_REFUND = 4
     var lastReadTag : IsoDep? = null
+    var KEY_MODE = "KEY_MODE"
 }

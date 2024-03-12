@@ -1,5 +1,9 @@
 package com.lovisgod.testVisaTTP.models.enums
 
 enum class KeyType {
-    PIN_KEY, MASTER_KEY, SESSION_KEY
+    PIN_KEY, MASTER_KEY, SESSION_KEY, IPEK
+}
+
+enum class KeyMode {
+    ISO_0, DUKPT
 }

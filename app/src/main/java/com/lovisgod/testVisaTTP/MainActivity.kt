@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.lovisgod.nfcpos.utils.BerTag
@@ -19,8 +20,11 @@ import com.lovisgod.testVisaTTP.Constants.testCase_SIGNATURE
 import com.lovisgod.testVisaTTP.handlers.Conversions
 import com.lovisgod.testVisaTTP.handlers.HexUtil
 import com.lovisgod.testVisaTTP.handlers.Implementations.NFCListenerImpl
+import com.lovisgod.testVisaTTP.handlers.KeyBoardClick
 import com.lovisgod.testVisaTTP.handlers.PPSEManager
+import com.lovisgod.testVisaTTP.handlers.PinKeyPadHandler
 import com.lovisgod.testVisaTTP.handlers.TlvData
+import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.visa.app.ttpkernel.ContactlessConfiguration
 import com.visa.app.ttpkernel.ContactlessKernel
@@ -30,9 +34,10 @@ import com.visa.app.ttpkernel.Version
 import com.visa.vac.tc.emvconverter.Utils
 import java.io.IOException
 import java.util.Arrays
+import java.util.HashMap
 
 
-class MainActivity : AppCompatActivity(), TransactionLogger {
+class MainActivity : AppCompatActivity(), TransactionLogger, KeyBoardClick {
 
     private var nfcAdapter: NfcAdapter? = null
     var nfcListener: NFCListener? = null
@@ -45,6 +50,8 @@ class MainActivity : AppCompatActivity(), TransactionLogger {
     var testBtn: AppCompatButton? = null
     var view: View?  = null
     var DF03 = ""
+    var clearPinText = ""
+    var transactionContactlessResult: HashMap<String, ByteArray>? = null
 
     // Supported AIDs
     val supportedAid = ArrayList(
@@ -119,6 +126,10 @@ class MainActivity : AppCompatActivity(), TransactionLogger {
         mainLog?.setText("")
 
         // set up nfc adapter and others
+
+        PinKeyPadHandler.handleKeyButtonClick(this, view!!)
+
+        SDKHelper.setPinMode(KeyMode.ISO_0)
 
         setupNfc()
 
@@ -272,6 +283,7 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
             ContactlessResult.getData:
             """.trimIndent()
             val cardData = contactlessResult.data
+            transactionContactlessResult = contactlessResult.data
             for ((key1, value1) in cardData) {
                 key = key1 as String
                 if (value1 != null) {
@@ -560,5 +572,43 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
     fun doDummyPinKey() {
         val pinKey = "45C36DD03F229F5DC1C662E2291CA2BA"
         SDKHelper.injectKey(pinKey, this.applicationContext, KeyType.PIN_KEY)
+    }
+
+    override fun onNumClick(num: String) {
+      if (clearPinText.length > 6) {
+          Toast.makeText(this, "Pin Cannot be more than 6", Toast.LENGTH_LONG).show()
+      } else {
+          clearPinText += num
+          view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
+      }
+    }
+
+    override fun onSubmitButtonClick() {
+        println("pin is ${clearPinText}")
+        // calculate pin block based on the mode of pin
+       if (clearPinText.length < 4) {
+           Toast.makeText(this, "Pin not complete", Toast.LENGTH_LONG).show()
+       } else {
+           view?.visibility = View.GONE
+           val track2  =  transactionContactlessResult?.get("57")?.let { Conversions.parseBERTLV(it)?.find(BerTag("57"))?.getHexValue() }
+           println("track 2::::  $track2")
+           val pan  = track2?.uppercase()?.split("D")?.get(0)
+
+           println(pan)
+
+           val pinBlock = SDKHelper.getPinBlock(clearPinText, pan.toString(), this)
+       }
+    }
+
+    override fun onBackSpace() {
+        if (clearPinText.isNotEmpty()) {
+            clearPinText = clearPinText.substring(0, clearPinText.length -1)
+            view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
+        }
+    }
+
+    override fun onClear() {
+        clearPinText = ""
+        view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
     }
 }

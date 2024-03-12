@@ -218,7 +218,7 @@
             app:layout_constraintTop_toTopOf="@id/btn0" />
 
         <ImageView
-            android:id="@+id/btnClear"
+            android:id="@+id/btnBack"
             android:layout_width="0.0dip"
             android:layout_height="0.0dip"
             android:padding="24.0dip"
