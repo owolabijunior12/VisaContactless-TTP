@@ -127,6 +127,8 @@ class MainActivity : AppCompatActivity(), TransactionLogger, KeyBoardClick {
 
         // set up nfc adapter and others
 
+        SDKHelper.initialize(this.applicationContext)
+
         PinKeyPadHandler.handleKeyButtonClick(this, view!!)
 
         SDKHelper.setPinMode(KeyMode.ISO_0)
@@ -597,6 +599,9 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
            println(pan)
 
            val pinBlock = SDKHelper.getPinBlock(clearPinText, pan.toString(), this)
+
+           // create transaction data
+           transactionContactlessResult?.let { SDKHelper.getTransactionData(it, pinBlock) }
        }
     }
 

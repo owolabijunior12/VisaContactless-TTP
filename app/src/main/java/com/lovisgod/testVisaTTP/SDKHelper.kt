@@ -4,16 +4,58 @@ import android.content.Context
 import androidx.core.content.ContextCompat
 import com.lovisgod.testVisaTTP.handlers.AesCryptoManager
 import com.lovisgod.testVisaTTP.handlers.ISO_0_PinHelper
+import com.lovisgod.testVisaTTP.models.datas.EmvPinData
+import com.lovisgod.testVisaTTP.models.datas.RequestIccData
+import com.lovisgod.testVisaTTP.models.datas.getIccData
+import com.lovisgod.testVisaTTP.models.datas.getIccString
 import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.pixplicity.easyprefs.library.Prefs
+import com.visa.vac.tc.emvconverter.Utils
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 
 object SDKHelper {
 
+
     val cryptoManager = AesCryptoManager()
+
+    var context: Any? = null
+
+    var lastRequestIccData: RequestIccData? = null
+
+    fun initialize(context: Context) {
+     this.context = context
+     lastRequestIccData = null
+    }
+
+    fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: String) {
+      println(data)
+      var value = ""
+
+        for ((key1, value1) in data) {
+            if (value1 != null) {
+                value += Utils.getHexString(value1 as ByteArray?) as String
+            }
+        }
+
+       println("iccData string gotten is ::::: $value")
+        var iccdataBytes: ByteArray = Utils.hexToByteArray(value)
+       val iccString = getIccString(iccdataBytes)
+        println("iccData string needed and gotten is ::::: $iccString")
+
+       val requestIccData = getIccData(iccdataBytes)
+       println("iccData track 2  is :::: ${requestIccData.TRACK_2_DATA}")
+       requestIccData.apply {
+           this.iccAsString = iccString
+           this.EMV_CARD_PIN_DATA = EmvPinData(CardPinBlock = pinBlock)
+       }
+
+       this.lastRequestIccData = requestIccData
+
+        println("iccData pinblock is :::: ${requestIccData.EMV_CARD_PIN_DATA.CardPinBlock}")
+    }
 
 
     fun setPinMode(keyMode: KeyMode) {
@@ -91,6 +133,7 @@ object SDKHelper {
           KeyType.MASTER_KEY -> "MasterKey.txt"
           KeyType.SESSION_KEY -> "SessionKey.txt"
           KeyType.IPEK -> "Ipek.txt"
+          KeyType.KSN -> "Ksn.txt"
         }
     }
 }
