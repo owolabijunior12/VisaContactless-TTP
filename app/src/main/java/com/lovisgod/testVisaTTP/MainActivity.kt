@@ -24,6 +24,7 @@ import com.lovisgod.testVisaTTP.handlers.KeyBoardClick
 import com.lovisgod.testVisaTTP.handlers.PPSEManager
 import com.lovisgod.testVisaTTP.handlers.PinKeyPadHandler
 import com.lovisgod.testVisaTTP.handlers.TlvData
+import com.lovisgod.testVisaTTP.handlers.network.networkInterface.networkSampleRepo
 import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.visa.app.ttpkernel.ContactlessConfiguration
@@ -32,6 +33,10 @@ import com.visa.app.ttpkernel.NfcTransceiver
 import com.visa.app.ttpkernel.TtpOutcome
 import com.visa.app.ttpkernel.Version
 import com.visa.vac.tc.emvconverter.Utils
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.util.Arrays
 import java.util.HashMap
@@ -74,7 +79,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, KeyBoardClick {
         contactlessConfiguration = ContactlessConfiguration.getInstance()
 
         val myData = contactlessConfiguration?.terminalData
-        myData?.set("9F02", byteArrayOf(0x01, 0x00, 0x00)) // set the amount
+        myData?.set("9F02", "100".encodeToByteArray()) // set the amount
 
         myData?.set("9F1A", byteArrayOf(0x05, 0x66)) // set terminal country code
 
@@ -572,8 +577,9 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
     }
 
     fun doDummyPinKey() {
-        val pinKey = "45C36DD03F229F5DC1C662E2291CA2BA"
-        SDKHelper.injectKey(pinKey, this.applicationContext, KeyType.PIN_KEY)
+        runBlocking {
+            networkSampleRepo.downloadKeys(this@MainActivity.applicationContext)
+        }
     }
 
     override fun onNumClick(num: String) {
@@ -585,6 +591,7 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
       }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onSubmitButtonClick() {
         println("pin is ${clearPinText}")
         // calculate pin block based on the mode of pin
@@ -601,7 +608,17 @@ TestCase # $testCase  TTP KoD Kernel Ver: ${
            val pinBlock = SDKHelper.getPinBlock(clearPinText, pan.toString(), this)
 
            // create transaction data
-           transactionContactlessResult?.let { SDKHelper.getTransactionData(it, pinBlock) }
+           transactionContactlessResult?.let {
+               val iccData = SDKHelper.getTransactionData(it, pinBlock)
+              runBlocking {
+                   if (iccData != null) {
+                       networkSampleRepo.testTrans(applicationContext, iccData)
+                   }
+               }
+           }
+
+           // reset nfc field
+           nfcListener?.resetNFCField()
        }
     }
 

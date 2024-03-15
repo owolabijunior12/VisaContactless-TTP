@@ -30,7 +30,7 @@ object SDKHelper {
      lastRequestIccData = null
     }
 
-    fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: String) {
+    fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: String): RequestIccData? {
       println(data)
       var value = ""
 
@@ -55,6 +55,8 @@ object SDKHelper {
        this.lastRequestIccData = requestIccData
 
         println("iccData pinblock is :::: ${requestIccData.EMV_CARD_PIN_DATA.CardPinBlock}")
+
+        return lastRequestIccData
     }
 
 
