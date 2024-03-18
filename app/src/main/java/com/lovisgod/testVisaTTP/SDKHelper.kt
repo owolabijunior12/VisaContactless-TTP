@@ -1,9 +1,13 @@
 package com.lovisgod.testVisaTTP
 
+import NFCListener
 import android.content.Context
+import android.nfc.NfcAdapter
 import androidx.core.content.ContextCompat
 import com.lovisgod.testVisaTTP.handlers.AesCryptoManager
 import com.lovisgod.testVisaTTP.handlers.ISO_0_PinHelper
+import com.lovisgod.testVisaTTP.handlers.Implementations.NFCListenerImpl
+import com.lovisgod.testVisaTTP.handlers.NewNfcTransceiver
 import com.lovisgod.testVisaTTP.models.datas.EmvPinData
 import com.lovisgod.testVisaTTP.models.datas.RequestIccData
 import com.lovisgod.testVisaTTP.models.datas.getIccData
@@ -11,6 +15,8 @@ import com.lovisgod.testVisaTTP.models.datas.getIccString
 import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.pixplicity.easyprefs.library.Prefs
+import com.visa.app.ttpkernel.ContactlessConfiguration
+import com.visa.app.ttpkernel.ContactlessKernel
 import com.visa.vac.tc.emvconverter.Utils
 import java.io.File
 import java.io.FileInputStream
@@ -25,9 +31,26 @@ object SDKHelper {
 
     var lastRequestIccData: RequestIccData? = null
 
-    fun initialize(context: Context) {
+    var contactlessConfiguration: ContactlessConfiguration? = null
+
+    private var nfcAdapter: NfcAdapter? = null
+    var nfcListener: NFCListener? = null
+
+    var newNfcTransceiver: NewNfcTransceiver? = null
+
+
+
+    fun initialize(context: Context, nfcAdapter: NfcAdapter) {
      this.context = context
      lastRequestIccData = null
+        // Get the ContactlessConfiguration instance
+        contactlessConfiguration = ContactlessConfiguration.getInstance()
+
+        nfcListener = NFCListenerImpl()
+        nfcListener?.activateNFC()
+
+        newNfcTransceiver =  NewNfcTransceiver(nfcListener!!)
+
     }
 
     fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: String): RequestIccData? {
