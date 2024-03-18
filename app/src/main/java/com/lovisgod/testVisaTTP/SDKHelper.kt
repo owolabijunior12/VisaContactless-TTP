@@ -40,7 +40,7 @@ object SDKHelper {
 
 
 
-    fun initialize(context: Context, nfcAdapter: NfcAdapter) {
+    fun initialize(context: Context, nfcAdapter: NfcAdapter?) {
      this.context = context
      lastRequestIccData = null
         // Get the ContactlessConfiguration instance

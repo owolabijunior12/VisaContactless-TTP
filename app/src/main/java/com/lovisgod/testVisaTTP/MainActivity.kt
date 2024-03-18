@@ -21,6 +21,7 @@ import com.lovisgod.testVisaTTP.handlers.PinKeyPadHandler
 import com.lovisgod.testVisaTTP.handlers.network.networkInterface.networkSampleRepo
 import com.lovisgod.testVisaTTP.models.OnlineRespEntity
 import com.lovisgod.testVisaTTP.models.datas.RequestIccData
+import com.lovisgod.testVisaTTP.models.datas.TerminalInfo
 import com.lovisgod.testVisaTTP.models.enums.AccountType
 import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.TransactionResultCode
@@ -41,6 +42,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
     var contactlessConfiguration: ContactlessConfiguration? = null
     var contactlessKernel: ContactlessKernel? = null
     var mainLog: TextView? = null
+    var pintext: TextView? = null
     var testBtn: AppCompatButton? = null
     var view: View?  = null
 
@@ -56,6 +58,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
         mainLog = findViewById(R.id.mainLog)
         testBtn = findViewById(R.id.testBtn)
         view = findViewById(R.id.keypad_layout)
+        pintext = findViewById(R.id.pinText)
 
 //        contactlessKernel = ContactlessKernel.getInstance(applicationContext);
 //
@@ -76,7 +79,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
         SDKHelper.setPinMode(KeyMode.ISO_0)
 
-        setupNfc()
+//        setupNfc()
 
         doDummyPinKey() //this is dummy pinkey loading for the purpose testing pinkey injection
 
@@ -84,7 +87,14 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
         testBtn?.setOnClickListener {
            runBlocking {
+               useCases.setTerminalConfigUseCase.invoke(TerminalInfo(
+                   terminalCapabilities = "E0F8C8",
+                   terminalCountryCode = "0566",
+                   transCurrencyCode = "0566",
+                   cardAcceptorNameLocation = "ISW Visa sample    Oko Awo Street"
+               ))
                 useCases.emvSetIsKimonoUseCase.invoke(false)
+                useCases.emvPayUseCase.invoke("100".toInt().toLong(), this@MainActivity, this@MainActivity)
 
            }
         }
@@ -117,8 +127,11 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
     }
 
     override fun onPause() {
+        println("on pause called")
         super.onPause()
+        nfcListener?.resetNFCField()
         nfcAdapter!!.disableReaderMode(this)
+
     }
 
     override fun onDestroy() {
@@ -171,6 +184,11 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
     override fun onSelectAccountType(): AccountType {
        return AccountType.Default
+    }
+
+    override fun onPinText(text: String) {
+        super.onPinText(text)
+        pintext?.text = text
     }
 
 }

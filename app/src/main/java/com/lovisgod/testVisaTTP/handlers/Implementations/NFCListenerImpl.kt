@@ -18,6 +18,7 @@ class NFCListenerImpl : NFCListener {
                 lastReadTag!!.close()
                 lastReadTag?.close()
             }
+            lastReadTag = null
         } catch (e: IOException) {
             Log.e(TAG, "activateNFC: ", e)
         }

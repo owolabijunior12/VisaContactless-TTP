@@ -14,6 +14,10 @@ interface ReadCardStates {
         println("card has been detected")
     }
     fun onRemoveCard()
+
+    fun onPinText(text: String = "") {
+        println("pin text ::: $text")
+    }
     fun onPinInput()
     fun sendTransactionOnline(emvData: RequestIccData): OnlineRespEntity
     fun onEmvProcessing(message: String = "Please wait while we read card")

@@ -93,11 +93,15 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
             Toast.makeText(context as Context, "Pin Cannot be more than 6", Toast.LENGTH_LONG).show()
         } else {
             clearPinText += num
+            this.readCardStates?.onPinText("*".repeat(clearPinText.length))
 //            view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
         }
     }
 
     override fun onSubmitButtonClick() {
+        if (dialog != null && dialog!!.isShowing) {
+            dialog?.dismiss()
+        }
         println("pin is ${clearPinText}")
         // calculate pin block based on the mode of pin
         if (clearPinText.length < 4) {
@@ -135,12 +139,14 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
     override fun onBackSpace() {
         if (clearPinText.isNotEmpty()) {
             clearPinText = clearPinText.substring(0, clearPinText.length -1)
+            this.readCardStates?.onPinText("*".repeat(clearPinText.length))
 //            view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
         }
     }
 
     override fun onClear() {
         clearPinText = ""
+        this.readCardStates?.onPinText("*".repeat(clearPinText.length))
 //        view?.findViewById<TextView>(R.id.pin_text)?.text = "*".repeat(clearPinText.length)
     }
 
@@ -165,13 +171,13 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
         } catch (e: IOException) {
             e.printStackTrace()
         }
-        while (selectedAid != null) {
+        if (selectedAid != null) {
             // find way to get the card pan
             this@EmvPaymentHandler.readCardStates?.onCardRead("Visa", "")
             val selectedAccountType = this@EmvPaymentHandler.readCardStates?.onSelectAccountType()
 
             if (selectedAccountType != null) {
-                while (continueTransaction != false) {
+                while (continueTransaction) {
                     // Get the ContactlessConfiguration instance
                     contactlessConfiguration = ContactlessConfiguration.getInstance()
 
@@ -201,7 +207,7 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
                     )
                     myData?.set("009C", byteArrayOf(0x20.toByte()))
 
-                    this@EmvPaymentHandler.readCardStates?.onCardDetected()
+//                    this@EmvPaymentHandler.readCardStates?.onCardDetected()
 
                     // Call TTP Kernel performTransaction
                     val contactlessResult =
@@ -288,9 +294,9 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
                                 val view =
                                     inflater.inflate(com.lovisgod.testVisaTTP.R.layout.keypad, null) as ConstraintLayout
 
-                                val keyBoardView = view.findViewById<View>(com.lovisgod.testVisaTTP.R.id.keypad_layout)
 
-                                println("context: $context")
+                                val keyBoardView = view.findViewById<View>(com.lovisgod.testVisaTTP.R.id.layoutKeyboard)
+
 
                                 dialog = Dialog(this.context!!, R.style.Theme_Translucent_NoTitleBar)
                                 dialog!!.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -302,11 +308,14 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
                                 wlp?.flags = wlp?.flags?.and(WindowManager.LayoutParams.FLAG_DIM_BEHIND.inv())
                                 window?.setAttributes(wlp)
                                 dialog?.window?.setLayout(
-                                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    ViewGroup.LayoutParams.MATCH_PARENT,
                                     ViewGroup.LayoutParams.WRAP_CONTENT
                                 )
-                                PinKeyPadHandler.handleKeyButtonClick(this, keyBoardView)
+                                PinKeyPadHandler.handleKeyButtonClick(this, view)
                                 window?.setGravity(Gravity.BOTTOM)
+                                this.continueTransaction = false
+                                dialog?.show()
+
                             } else {
                                 println("this is the cvm result :::: $DF03")
                             }
