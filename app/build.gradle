@@ -1,7 +1,12 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'kotlin-parcelize'
 }
+
+def apikeyPropertiesFile = rootProject.file("api_key.properties")
+def apikeyProperties = new Properties()
+apikeyProperties.load(new FileInputStream(apikeyPropertiesFile))
 
 android {
     namespace 'com.lovisgod.testVisaTTP'
@@ -15,12 +20,24 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "API_KEY", apikeyProperties['API_KEY'])
+        buildConfigField("String", "MERCHANT_ID", apikeyProperties['MERCHANT_ID'])
+        buildConfigField("String", "SENTRY_DSN", apikeyProperties['SENTRY_DSN'])
     }
 
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            buildConfigField("boolean", "MOCK", "false")
+        }
+
+        debug {
+            buildConfigField("boolean", "MOCK", "false") // mock device
+            // add this for kozen
+            // remove this when not building for kozen
+//            signingConfig signingConfigs.kozenConfig
         }
     }
     compileOptions {
@@ -30,9 +47,14 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
+    def retrofit_version = '2.5.0'
+
     implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -42,4 +64,21 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation 'com.pixplicity.easyprefs:EasyPrefs:1.10.0'
+    api "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.10"
+
+    // retrofit
+
+    // retrofit http library
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-scalars:$retrofit_version"
+
+    implementation("com.squareup.retrofit2:converter-simplexml:$retrofit_version") {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'stax', module: 'stax'
+    }
+
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.8.0'
+    // retrofit gson converter
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation 'com.github.devicesandtokens:ISW_EMV_UTIL_LIB:0.1'
 }
