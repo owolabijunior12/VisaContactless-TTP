@@ -1,7 +1,6 @@
 package com.lovisgod.testVisaTTP.handlers.network
 
 import android.os.Parcelable
-import kotlinx.android.parcel.Parcelize
 import org.simpleframework.xml.Element
 import org.simpleframework.xml.Namespace
 import org.simpleframework.xml.NamespaceList
@@ -13,7 +12,7 @@ import org.simpleframework.xml.Root
     Namespace( prefix = "ns2", reference = "http://interswitchng.com"),
     Namespace( prefix = "ns3", reference = "http://tempuri.org/ns.xsd")
 )
-@Parcelize
+
 data class PurchaseResponse(
 
     @field:Element(name = "description", required = false)
@@ -58,7 +57,6 @@ data class PurchaseResponse(
     @field: Element(name = "transactionId", required = false)
     var transactionId: String? = null,
 
-    @field: Element(name = "transtype", required = false)
     var transTYpe: String? = null,
 
     @field: Element(name = "paymentType", required = false)
@@ -76,7 +74,7 @@ data class PurchaseResponse(
 //    val inquiryResponse: InquiryResponse? = null,
 
     @field:Element(name = "remoteResponseCode", required = false)
-    var remoteResponseCode: String = ""):Parcelable
+    var remoteResponseCode: String = "")
 
 
 

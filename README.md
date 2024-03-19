@@ -64,7 +64,7 @@ fun setupNfc() {
    ```
 9. Perform transactions by calling appropriate methods:
    ```kotlin
-     runBlocking {
+   runBlocking {
        useCases.emvPayUseCase.invoke("100".toInt().toLong(), this@MainActivity, this@MainActivity)
      }
    ```
