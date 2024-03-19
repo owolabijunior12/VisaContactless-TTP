@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
         // For testing purposes, perform 10 transactions
 
+
         testBtn?.setOnClickListener {
            runBlocking {
                useCases.setTerminalConfigUseCase.invoke(TerminalInfo(
