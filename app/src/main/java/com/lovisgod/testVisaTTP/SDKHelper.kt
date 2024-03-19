@@ -53,7 +53,7 @@ object SDKHelper {
 
     }
 
-    fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: String): RequestIccData? {
+    fun getTransactionData(data: HashMap<String, ByteArray>, pinBlock: EmvPinData): RequestIccData? {
       println(data)
       var value = ""
 
@@ -72,7 +72,7 @@ object SDKHelper {
        println("iccData track 2  is :::: ${requestIccData.TRACK_2_DATA}")
        requestIccData.apply {
            this.iccAsString = iccString
-           this.EMV_CARD_PIN_DATA = EmvPinData(CardPinBlock = pinBlock)
+           this.EMV_CARD_PIN_DATA = EmvPinData(CardPinBlock = pinBlock.CardPinBlock, ksn = pinBlock.ksn)
        }
 
        this.lastRequestIccData = requestIccData
@@ -160,5 +160,18 @@ object SDKHelper {
           KeyType.IPEK -> "Ipek.txt"
           KeyType.KSN -> "Ksn.txt"
         }
+    }
+
+    /**
+     * This method returns the next STAN (System Trace Audit Number)
+     */
+    fun getNextKsnCounter(): String {
+        var ksn = Prefs.getInt("KSNCOUNTER", 0)
+
+        // compute and save new stan
+        val newKsn = if (ksn >= 9) 1 else ++ksn
+        Prefs.putInt("KSNCOUNTER", ksn)
+
+        return newKsn.toString()
     }
 }

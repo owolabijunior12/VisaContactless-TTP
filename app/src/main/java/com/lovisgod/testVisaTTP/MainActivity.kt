@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
 //        PinKeyPadHandler.handleKeyButtonClick(this, view!!)
 
-        SDKHelper.setPinMode(KeyMode.ISO_0)
+        SDKHelper.setPinMode(KeyMode.ISO_0) // change to dukpt when testing dukpt
 
 //        setupNfc()
 
@@ -166,6 +166,7 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
 
     override fun sendTransactionOnline(emvData: RequestIccData): OnlineRespEntity {
        val response = runBlocking {
+           pintext?.text = ""
            val response  = networkSampleRepo.testTrans(this@MainActivity.applicationContext, emvData)
            return@runBlocking response
        }
@@ -191,6 +192,10 @@ class MainActivity : AppCompatActivity(), TransactionLogger, ReadCardStates {
         pintext?.text = text
     }
 
+
+    override fun onTransactionFailed(reason: String) {
+        super.onTransactionFailed(reason)
+    }
 }
 
 class SampleApplication: Application() {

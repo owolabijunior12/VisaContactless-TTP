@@ -80,4 +80,5 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:3.8.0'
     // retrofit gson converter
     implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+    implementation 'com.github.devicesandtokens:ISW_EMV_UTIL_LIB:0.1'
 }

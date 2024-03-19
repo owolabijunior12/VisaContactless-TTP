@@ -4,9 +4,11 @@ package com.lovisgod.testVisaTTP.data
 import android.content.Context
 import com.lovisgod.testVisaTTP.SDKHelper
 import com.lovisgod.testVisaTTP.SDKHelper.contactlessConfiguration
+import com.lovisgod.testVisaTTP.handlers.StringManipulator
 import com.lovisgod.testVisaTTP.models.datas.ConfigInfoHelper.saveTerminalInfo
 import com.lovisgod.testVisaTTP.models.datas.IswHpCodes
 import com.lovisgod.testVisaTTP.models.datas.TerminalInfo
+import com.lovisgod.testVisaTTP.models.enums.KeyMode
 import com.lovisgod.testVisaTTP.models.enums.KeyType
 
 
@@ -62,8 +64,9 @@ class EmvDataKeyManager {
 
     private fun setDukpt(key: String, ksn:String): Int {
        try {
+         SDKHelper.setPinMode(KeyMode.DUKPT)
          SDKHelper.injectKey(key, SDKHelper.context as Context, KeyType.IPEK)
-         SDKHelper.injectKey(ksn, SDKHelper.context as Context, KeyType.KSN)
+         SDKHelper.injectKey(StringManipulator.dropLastCharacter(ksn), SDKHelper.context as Context, KeyType.KSN)
          return 0
        }catch (e: Exception) {
            e.printStackTrace()
@@ -95,6 +98,7 @@ class EmvDataKeyManager {
 
     fun setPinWorkingKey(key: String, keyIndex: Int): Int {
         try {
+            SDKHelper.setPinMode(KeyMode.ISO_0)
             SDKHelper.injectKey(key, SDKHelper.context as Context, KeyType.PIN_KEY)
             return 0
         } catch (e: Exception) {
@@ -102,4 +106,5 @@ class EmvDataKeyManager {
             return IswHpCodes.PIN_LOAD_ERROR
         }
     }
+
 }

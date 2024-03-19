@@ -13,15 +13,19 @@ import android.view.Window
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import com.isw.pinencrypter.Converter.GetPinBlock
 import com.lovisgod.nfcpos.utils.BerTag
 import com.lovisgod.testVisaTTP.SDKHelper
 import com.lovisgod.testVisaTTP.SDKHelper.contactlessConfiguration
-import com.lovisgod.testVisaTTP.SDKHelper.context
 import com.lovisgod.testVisaTTP.TransactionLogger
 import com.lovisgod.testVisaTTP.handlers.Conversions
 import com.lovisgod.testVisaTTP.handlers.KeyBoardClick
 import com.lovisgod.testVisaTTP.handlers.PPSEManager
 import com.lovisgod.testVisaTTP.handlers.PinKeyPadHandler
+import com.lovisgod.testVisaTTP.handlers.StringManipulator
+import com.lovisgod.testVisaTTP.models.datas.EmvPinData
+import com.lovisgod.testVisaTTP.models.enums.KeyMode
+import com.lovisgod.testVisaTTP.models.enums.KeyType
 import com.lovisgod.testVisaTTP.models.uiState.ReadCardStates
 import com.visa.app.ttpkernel.ContactlessConfiguration
 import com.visa.app.ttpkernel.ContactlessKernel
@@ -75,7 +79,7 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
     private fun stopEmvProcess() {
         println("this is called called called")
         try {
-
+            SDKHelper.nfcListener?.resetNFCField()
         } catch (e: RemoteException) {
             e.printStackTrace()
         } catch (e: NullPointerException) {
@@ -114,7 +118,27 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
 
             println(pan)
 
-            val pinBlock = SDKHelper.getPinBlock(clearPinText, pan.toString(), context as Context)
+            val pinBlock: EmvPinData = if (SDKHelper.getPinMode() == KeyMode.ISO_0) {
+                 EmvPinData(
+                     ksn = "",
+                     CardPinBlock = SDKHelper.getPinBlock(clearPinText, pan.toString(), context as Context)
+                 )
+            } else {
+                val ksnCount: String = SDKHelper.getNextKsnCounter()
+                val ksnString = SDKHelper.getKey(KeyType.KSN, this.context!!) + ksnCount
+                // calculate the dukpt pinblock here
+                val pinBlock = GetPinBlock(
+                    SDKHelper.getKey(KeyType.IPEK, this.context!!),
+                    ksnString,
+                    clearPinText,
+                    pan.toString()
+                )
+                println("dukpt pin block::::: $pinBlock")
+                EmvPinData(
+                    ksn = StringManipulator.dropFirstCharacter(ksnString, 4),
+                    CardPinBlock = pinBlock
+                )
+            }
 
             // create transaction data
             transactionContactlessResult?.let {
@@ -316,18 +340,42 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
                                 this.continueTransaction = false
                                 dialog?.show()
 
+                            }else if (DF03.isNotEmpty() && (DF03 == "00")) {
+                                transactionContactlessResult?.let {
+                                    val iccData = SDKHelper.getTransactionData(it, EmvPinData(ksn = "", CardPinBlock = ""))
+                                    var responseEntity = iccData?.let { it1 ->
+                                        this@EmvPaymentHandler.readCardStates?.sendTransactionOnline(
+                                            it1
+                                        )
+                                    }
+                                }
+
+                            }
+                            else if (DF03.isNotEmpty() && (DF03 == "01")) {
+                                transactionContactlessResult?.let {
+                                    val iccData = SDKHelper.getTransactionData(it, EmvPinData(ksn = "", CardPinBlock = ""))
+                                    var responseEntity = iccData?.let { it1 ->
+                                        this@EmvPaymentHandler.readCardStates?.sendTransactionOnline(
+                                            it1
+                                        )
+                                    }
+                                }
                             } else {
                                 println("this is the cvm result :::: $DF03")
+                                // declined
+                                this.readCardStates?.onTransactionFailed("Transaction decline with cvm decline.")
                             }
 
                         }
 
                         TtpOutcome.DECLINED -> {
                             this.log("Transaction Declined")
+                            this.readCardStates?.onTransactionFailed("Transaction declined offline. Kindly try again with another interface")
                         }
 
                         TtpOutcome.ABORTED -> {
                             this.log("Transaction terminated")
+                            this.readCardStates?.onTransactionFailed("Transaction terminated. Kindly try again with another interface")
                         }
 
                         TtpOutcome.TRYNEXT ->{
@@ -343,6 +391,7 @@ class EmvPaymentHandler : TransactionLogger, KeyBoardClick {
 
                         TtpOutcome.SELECTAGAIN -> {
                             this.log("GPO Returned 6986. Application Try Again.")
+                            this.readCardStates?.onTransactionFailed("Transaction declined. Kindly try again with another interface")
                         }
 
                         else -> {}

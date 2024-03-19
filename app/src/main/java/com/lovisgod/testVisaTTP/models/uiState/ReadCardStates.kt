@@ -18,6 +18,10 @@ interface ReadCardStates {
     fun onPinText(text: String = "") {
         println("pin text ::: $text")
     }
+
+    fun onTransactionFailed(reason: String) {
+        println(reason)
+    }
     fun onPinInput()
     fun sendTransactionOnline(emvData: RequestIccData): OnlineRespEntity
     fun onEmvProcessing(message: String = "Please wait while we read card")
