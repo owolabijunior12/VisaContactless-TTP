@@ -3,11 +3,9 @@ package com.lovisgod.testVisaTTP.models.datas
 import android.os.Parcelable
 import com.google.gson.Gson
 import com.pixplicity.easyprefs.library.Prefs
-import kotlinx.android.parcel.Parcelize
 import org.simpleframework.xml.Element
 import org.simpleframework.xml.Root
 
-@Parcelize
 @Root(name = "terminalInfoBySerials", strict = false)
 data class TerminalInfo(
 
@@ -63,7 +61,7 @@ data class TerminalInfo(
     var terminalCapabilities: String = "E0F8C8",
     var terminalExtCapabilities: String = "F000F0F001",
     var terminalEntryMode: String = "05"
-): Parcelable {
+) {
     override fun toString(): String {
         """code: ${terminalCode}
                    capailty: ${terminalCapabilities}

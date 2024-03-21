@@ -1,7 +1,8 @@
 plugins {
-    id 'com.android.application'
+//    id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-parcelize'
+//    id 'kotlin-parcelize'
+    id 'com.android.library'
 }
 
 def apikeyPropertiesFile = rootProject.file("api_key.properties")
@@ -13,7 +14,7 @@ android {
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.lovisgod.testVisaTTP"
+//        applicationId "com.lovisgod.testVisaTTP"
         minSdk 29
         targetSdk 33
         versionCode 1
@@ -64,6 +65,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation 'com.pixplicity.easyprefs:EasyPrefs:1.10.0'
+    implementation project(':visattpsdk_aar')
     api "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.10"
 
     // retrofit
